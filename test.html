@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter App</title>
+</head>
+<body>
+    <ul id="peopleList"></ul>
+    <input type="text" id="newName" placeholder="Neuer Name">
+    <button onclick="addCounter()">Neuen Namen hinzufügen</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Funktion zum Abrufen der Daten und Anzeigen auf der Website
+            const updateList = async function () {
+                const response = await fetch('http://localhost:3000/getCounters');
+                const counters = await response.json();
+
+                const peopleList = document.getElementById('peopleList');
+                peopleList.innerHTML = '';
+
+                counters.forEach(counter => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${counter.name}: ${counter.counter}`;
+                    peopleList.appendChild(listItem);
+                });
+            };
+
+            // Initialisierung der Liste
+            await updateList();
+
+            // Funktion zum Hinzufügen eines neuen Namens
+            window.addCounter = async function () {
+                const newName = document.getElementById('newName').value;
+
+                if (newName) {
+                    const response = await fetch('http://localhost:3000/addCounter', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ name: newName }),
+                    });
+
+                    if (response.ok) {
+                        console.log('Neuer Name hinzugefügt');
+                        // Aktualisiere die Liste nach dem Hinzufügen
+                        await updateList();
+                    } else {
+                        console.error('Fehler beim Hinzufügen des neuen Namens');
+                    }
+                } else {
+                    console.error('Bitte einen Namen eingeben');
+                }
+            };
+        });
+    </script>
+</body>
+</html>
