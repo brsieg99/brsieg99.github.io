@@ -3,58 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counter App</title>
+    <title>Zähler-Anwendung</title>
 </head>
 <body>
+
+    <div>
+        <label for="nameFilter">Filter:</label>
+        <input type="text" id="nameFilter" oninput="filterNames()">
+    </div>
+
     <ul id="peopleList"></ul>
-    <input type="text" id="newName" placeholder="Neuer Name">
-    <button onclick="addCounter()">Neuen Namen hinzufügen</button>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-            // Funktion zum Abrufen der Daten und Anzeigen auf der Website
-            const updateList = async function () {
-                const response = await fetch('http://localhost:3000/getCounters');
-                const counters = await response.json();
+        document.addEventListener('DOMContentLoaded', function () {
+            const peopleList = document.getElementById('peopleList');
 
-                const peopleList = document.getElementById('peopleList');
-                peopleList.innerHTML = '';
-
-                counters.forEach(counter => {
-                    const listItem = document.createElement('li');
-                    listItem.textContent = `${counter.name}: ${counter.counter}`;
-                    peopleList.appendChild(listItem);
-                });
+            const updateList = function () {
+                fetch('https://brsieg99.github.io/getCounters')
+                    .then(response => response.json())
+                    .then(data => {
+                        peopleList.innerHTML = '';
+                        data.forEach(person => {
+                            const listItem = document.createElement('li');
+                            listItem.innerHTML = `
+                                <div class="name">
+                                    <div class="text nameItem">${person.name}</div>
+                                </div>
+                                <div class="increase-decrease">
+                                    <button class="decrement" onclick="decrementCounter(${person.id})">
+                                        <div class="text2">-</div>
+                                    </button>
+                                    <button class="increment" onclick="incrementCounter(${person.id})">
+                                        <div class="text3">+</div>
+                                    </button>
+                                </div>
+                                <div class="counter" id="counter${person.id}">${person.counter}</div>
+                            `;
+                            peopleList.appendChild(listItem);
+                        });
+                    })
+                    .catch(error => console.error('Fehler beim Abrufen der Zählerdaten', error));
             };
 
-            // Initialisierung der Liste
-            await updateList();
-
-            // Funktion zum Hinzufügen eines neuen Namens
-            window.addCounter = async function () {
-                const newName = document.getElementById('newName').value;
-
-                if (newName) {
-                    const response = await fetch('http://localhost:3000/addCounter', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ name: newName }),
-                    });
-
-                    if (response.ok) {
-                        console.log('Neuer Name hinzugefügt');
-                        // Aktualisiere die Liste nach dem Hinzufügen
-                        await updateList();
-                    } else {
-                        console.error('Fehler beim Hinzufügen des neuen Namens');
-                    }
-                } else {
-                    console.error('Bitte einen Namen eingeben');
-                }
+            window.incrementCounter = function (personId) {
+                fetch(`https://brsieg99.github.io/increment/${personId}`, { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(updateList)
+                    .catch(error => console.error('Fehler beim Inkrementieren des Zählers', error));
             };
+
+            window.decrementCounter = function (personId) {
+                fetch(`https://brsieg99.github.io/decrement/${personId}`, { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(updateList)
+                    .catch(error => console.error('Fehler beim Dekrementieren des Zählers', error));
+            };
+
+            updateList();
         });
+
+        function filterNames() {
+            const filterValue = document.getElementById('nameFilter').value.toLowerCase();
+            const nameList = document.getElementById('peopleList');
+            const names = nameList.getElementsByClassName('nameItem');
+
+            for (const name of names) {
+                const textValue = name.textContent || name.innerText;
+                const isVisible = textValue.toLowerCase().indexOf(filterValue) > -1;
+                name.style.display = isVisible ? '' : 'none';
+            }
+        }
     </script>
 </body>
 </html>
